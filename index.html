@@ -1,178 +1,264 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 
 <head>
-    <meta charset="utf-8">
-    <title>Ports</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://ar-js-org.github.io/AR.js/aframe/build/aframe-ar.js"></script>    
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>GeoAR.js demo</title>
+    <script src='https://aframe.io/releases/0.9.2/aframe.min.js'></script>
+    <script src='https://raw.githack.com/jeromeetienne/AR.js/master/aframe/build/aframe-ar.min.js'></script>
+    <script>
+        THREEx.ArToolkitContext.baseURL = 'https://raw.githack.com/jeromeetienne/ar.js/master/three.js/'
+    </script>
+    <style>
+        span {
+            margin-right: 0.5em;
+        }
+
+        div.debug {
+            position: fixed;
+            bottom: 20px;
+            left: 10px;
+            z-index: 1;
+            width: 100%;
+            background-color: rgba(1, 1, 1, 0.2);
+            color: #ff7500;
+            font-size: 0.75em;
+            padding: 0.5em;
+            width: initial;
+        }
+
+        #alert-popup {
+            border-radius: 5px;
+            position: absolute;
+            bottom: 10%;
+            left: 5%;
+            display: block;
+            width: 80%;
+            margin: 1em;
+            padding: 0.25em;
+            color: #ff7500;
+            font-size: 0.75em;
+            text-align: center;
+            background-color: white;
+        }
+
+        #place-label {
+            position: absolute;
+            top: 5%;
+            left: 0%;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        #place-label>span {
+            z-index: 99999;
+            padding: 0.25em;
+            color: #ff7500;
+            text-align: center;
+            background-color: white;
+            font-size: 1.5em;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 
-<body style="margin : 0px; overflow: hidden;">
-<a-scene id="scene" vr-mode-ui="enabled: false"
-    arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;">
-
-        <!-- Image at Konak -->
-        <a-image id="Konak" src="https://upload.wikimedia.org/wikipedia/commons/4/46/Konak_Terminal.jpg"
-            look-at="[gps-camera]" scale="5 5 5"
-            gps-entity-place="latitude: 38.418826366849444; longitude: 27.125208834874005;" position="0 2 0"
-            animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"></a-image>
-        
-        <!-- Text below Konak Image -->
-        <a-text id="Konak-distance" look-at="[gps-camera]" color="white" scale="5 5 5"
-            gps-entity-place="latitude: 38.418826366849444; longitude: 27.125208834874005;" position="0 -14 1"
-            animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"></a-text>
-
-        <!-- Repeat for other locations with adjusted positions -->
-        <a-image id="Pasaport" src="https://upload.wikimedia.org/wikipedia/commons/5/55/Kantar_Karakolu%2C_Izmir.jpg"
-            look-at="[gps-camera]" scale="5 5 5"
-            gps-entity-place="latitude: 38.42892199253736; longitude: 27.13228407441726;" position="0 2 0"
-            animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"></a-image>
-
-        <a-text id="Pasaport-distance" look-at="[gps-camera]" color="white" scale="5 5 5"
-            gps-entity-place="latitude: 38.42892199253736; longitude: 27.13228407441726;" position="0 -14 -1"
-            animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"></a-text>
-
-        <!-- Alsancak -->
-        <a-image id="Alsancak" src="https://upload.wikimedia.org/wikipedia/commons/f/f1/Alsancak_Pier.jpg"
-            look-at="[gps-camera]" scale="5 5 5"
-            gps-entity-place="latitude: 38.43897576759363; longitude: 27.140762959439844;" position="0 2 0"
-            animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"></a-image>
-
-        <a-text id="Alsancak-distance" look-at="[gps-camera]" color="white" scale="5 5 5"
-            gps-entity-place="latitude: 38.43897576759363; longitude: 27.140762959439844;" position="0 -14 1"
-            animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"></a-text>
-
-        <a-camera gps-camera rotation-reader></a-camera> 
-</a-scene>
+<body style='margin: 0; overflow: hidden;'>
     <script>
-        window.addEventListener('load', function () {
-            var cameraEl = document.querySelector('a-camera');
-            var initialScale = 1;
-            var initialDistance = null;
 
-            function getDistance(touches) {
-                var dx = touches[0].pageX - touches[1].pageX;
-                var dy = touches[0].pageY - touches[1].pageY;
-                return Math.sqrt(dx * dx + dy * dy);
-            }
+        const loadPlaces = function (coords) {
+            const method = 'apis';
 
-            function onPinchStart(event) {
-                if (event.touches.length === 2) {
-                    initialDistance = getDistance(event.touches);
-                    document.addEventListener('touchmove', onPinchMove);
-                    document.addEventListener('touchend', onPinchEnd);
-                }
-            }
+            const PLACES = [
+                {
+                    name: "İzq",
+                    imageURL: "./map-marker.png",
+                    URL: "https://www.google.com/search?q=izq",
+                    location: {
+                        lat: 38.42651897376231,
+                        lng: 27.132658844068313,
+                    }
+                },
+                {
+                    name: "Uçkıuyular",
+                    imageURL: "https://images.adsttc.com/media/images/642e/bdcb/400a/e301/7ce2/a832/newsletter/izq-innovation-center-ofisvesaire_1.jpg?1680784917",
+                    URL: "https://www.izdeniz.com.tr/",
+                    location: {
+                        lat: 38.405675209865336,
+                        lng: 27.06935935250486,
+                    }
+                },
+                {
+                    name: "Göztepe",
+                    imageURL: "https://images.adsttc.com/media/images/642e/bdcb/400a/e301/7ce2/a832/newsletter/izq-innovation-center-ofisvesaire_1.jpg?1680784917",
+                    URL: "https://www.izdeniz.com.tr/",
+                    location: {
+                        lat: 38.399571991405416,
+                        lng: 27.083436202065336,
+                    }
+                },
+                {
+                    name: "Karantina",
+                    imageURL: "https://images.adsttc.com/media/images/642e/bdcb/400a/e301/7ce2/a832/newsletter/izq-innovation-center-ofisvesaire_1.jpg?1680784917",
+                    URL: "https://www.google.com/search?q=karantina",
+                    location: {
+                        lat: 38.40826637555396,
+                        lng: 27.106606027145318,
+                    }
+                },
+                {
+                    name: "Konak",
+                    imageURL: "https://images.adsttc.com/media/images/642e/bdcb/400a/e301/7ce2/a832/newsletter/izq-innovation-center-ofisvesaire_1.jpg?1680784917",
+                    URL: "https://www.izdeniz.com.tr/",
+                    location: {
+                        lat: 38.418826366849444,
+                        lng: 27.125208834874005,
+                    }
+                },
+                {
+                    name: "Pasaport",
+                    imageURL: "https://images.adsttc.com/media/images/642e/bdcb/400a/e301/7ce2/a832/newsletter/izq-innovation-center-ofisvesaire_1.jpg?1680784917",
+                    URL: "https://www.izdeniz.com.tr/",
+                    location: {
+                        lat: 38.42892199253736,
+                        lng: 27.13228407441726,
+                    }
+                },
+                {
+                    name: "Alsancak",
+                    imageURL: "https://images.adsttc.com/media/images/642e/bdcb/400a/e301/7ce2/a832/newsletter/izq-innovation-center-ofisvesaire_1.jpg?1680784917",
+                    URL: "https://www.izdeniz.com.tr/",
+                    location: {
+                        lat: 38.43897576759363,
+                        lng: 27.140762959439844,
+                    }
+                },
+                {
+                    name: "Karşıyaka",
+                    imageURL: "https://images.adsttc.com/media/images/642e/bdcb/400a/e301/7ce2/a832/newsletter/izq-innovation-center-ofisvesaire_1.jpg?1680784917",
+                    URL: "https://www.izdeniz.com.tr/",
+                    location: {
+                        lat: 38.454830076318316,
+                        lng: 27.12052045655903,
+                    }
+                },
+                {
+                    name: "Bostanlı",
+                    imageURL: "https://images.adsttc.com/media/images/642e/bdcb/400a/e301/7ce2/a832/newsletter/izq-innovation-center-ofisvesaire_1.jpg?1680784917",
+                    URL: "https://www.izdeniz.com.tr/",
+                    location: {
+                        lat: 38.45202997017321,
+                        lng: 27.09778594157115,
+                    }
+                },
+            ];
+            PLACES.forEach(place => {
+                const distance = calculateDistance(coords.latitude, coords.longitude, place.location.lat, place.location.lng);
+                place.distance = distance;
+            });
 
-            function onPinchMove(event) {
-                if (event.touches.length === 2) {
-                    var distance = getDistance(event.touches);
-                    var scale = initialScale * (distance / initialDistance);
+            return Promise.resolve(PLACES);
+        };
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            // const R = 6371; // Radius of the Earth in kilometers
+            const R = 6371000; // Radius of the Earth in meters
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distance = R * c; // Distance in kilometers
+            return distance.toFixed(2); // Round to 2 decimal places
+        }
 
-                    var newFOV = 80 / scale;
-                    cameraEl.setAttribute('fov', newFOV);
-                }
-            }
+        function deg2rad(deg) {
+            return deg * (Math.PI / 180);
+        }
+        window.onload = () => {
+            const scene = document.querySelector('a-scene');
+            return navigator.geolocation.getCurrentPosition(function (position) {
+                loadPlaces(position.coords)
+                    .then((places) => {
+                        places.forEach((place) => {
+                            const latitude = place.location.lat;
+                            const longitude = place.location.lng;
+                            const _URL = place.URL;
+                            const distance = place.distance;
 
-            function onPinchEnd(event) {
-                if (event.touches.length < 2) {
-                    document.removeEventListener('touchmove', onPinchMove);
-                    document.removeEventListener('touchend', onPinchEnd);
+                            const icon = document.createElement('a-image');
+                            icon.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude}`);
+                            icon.setAttribute('name', `${place.name} (${distance} metre)`); // Display name with distance
+                            icon.setAttribute('src', 'map-marker.png');
+                            icon.setAttribute('scale', '20, 20');
+                            icon.addEventListener('loaded', () => window.dispatchEvent(new CustomEvent('gps-entity-place-loaded')));
 
-                    initialDistance = null;
-                }
-            }
+                            const clickListener = function (ev) {
+                                ev.stopPropagation();
+                                ev.preventDefault();
 
-            document.addEventListener('touchstart', onPinchStart);
-        });
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var scene = document.querySelector('a-scene'); 
-			
-            document.querySelectorAll('a-image').forEach(function (image) {
-                image.addEventListener('click', function () {
-                    // Redirect the user when an image is clicked
-                    window.location.href = 'https://www.izdeniz.com.tr/';
-                });
-            });  
- 
-            if (scene) {
-                scene.addEventListener('click', function () {
-                    // Select all entities with animation
-                    var animatedEntities = document.querySelectorAll('[animation]');
+                                const name = ev.target.getAttribute('name');
+                                const el = ev.detail.intersection && ev.detail.intersection.object.el;
 
-                    animatedEntities.forEach(function (entity) {
-                        // Check if the animation is running and pause it
-                        if (entity.components.animation && entity.components.animation.isPlaying) {
-                            entity.components.animation.pause();
-                        } else {
-                            // If the animation is paused, this resumes it
-                            entity.components.animation.play();
-                        }
-                    });
-                });
-            }
-            function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-                var R = 6371;
-                var dLat = deg2rad(lat2 - lat1);
-                var dLon = deg2rad(lon2 - lon1);
-                var a =
-                    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-                var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                var d = R * c;
-                return d * 1000;
-            }
+                                if (el && el === ev.target) {
+                                    const label = document.createElement('span');
+                                    const container = document.createElement('div');
+                                    container.setAttribute('id', 'place-label');
 
-            function deg2rad(deg) {
-                return deg * (Math.PI / 180);
-            }
+                                    const anchor = document.createElement('a');
+                                    anchor.setAttribute('href', _URL);
+                                    anchor.setAttribute('target', '_blank'); // Opens the link in a new tab
+                                    anchor.innerText = name;
 
-            function updateDistances() {
-                navigator.geolocation.getCurrentPosition(function (position) {
-                    var userLat = position.coords.latitude;
-                    var userLon = position.coords.longitude;
+                                    label.appendChild(anchor);
+                                    container.appendChild(label);
+                                    document.body.appendChild(container);
 
-                    document.querySelectorAll('[gps-entity-place]').forEach(function (entity) {
-                        var placeLat = entity.getAttribute('gps-entity-place').latitude;
-                        var placeLon = entity.getAttribute('gps-entity-place').longitude;
-                        var distance = getDistanceFromLatLonInKm(userLat, userLon, placeLat, placeLon).toFixed(2);
-
-                        var entityId = entity.getAttribute('id') + "-distance";
-                        var distanceEntity = document.getElementById(entityId);
-                        if (distanceEntity) {
-                            distanceEntity.setAttribute('value', ` ${distance} metre`);
-                            // distanceEntity.setAttribute('value', `Mesafe: ${distance} metre`);
-                        }
-
-                        var baseScale = 5;
-                        var scaleFactor = distance / 5;
-                        var newScale = baseScale + scaleFactor;
-                        newScale = Math.max(baseScale, newScale);
-
-                        entity.setAttribute('scale', `${newScale} ${newScale} ${newScale}`);
-
-                        // var baseHeight = 2; // 
-                        // var heightAdjustmentFactor = 0.1; 
-                        // var newHeight = baseHeight + (distance * heightAdjustmentFactor);
-                        // entity.setAttribute('scale', `${newScale} ${newScale} ${newScale}`);
-                        // entity.setAttribute('position', `0 ${newHeight} 0`); 
-                    });
-                }, function (err) {
-                    console.warn('ERROR(' + err.code + '): ' + err.message);
-                }, {
+                                    setTimeout(() => {
+                                        container.parentElement.removeChild(container);
+                                    }, 1500);
+                                }
+                                // window.location.replace(_URL);
+                            };
+                            icon.addEventListener('click', clickListener);
+                            scene.appendChild(icon);
+                        });
+                    })
+            },
+                (err) => console.error('Konum alma hatası', err),
+                {
                     enableHighAccuracy: true,
-                    timeout: 5000,
-                    maximumAge: 0
+                    maximumAge: 0,
+                    timeout: 27000,
+                }
+            );
+        };
+    </script>
+
+    <a-scene cursor='rayOrigin: mouse; fuse: true; fuseTimeout: 0;' raycaster="objects: [gps-entity-place];"
+        vr-mode-ui="enabled: false" embedded
+        arjs='sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: false;'>
+
+        <a-camera gps-camera rotation-reader arjs-device-orientation-controls='smoothingFactor: 0.1'>
+            <a-cursor></a-cursor>
+        </a-camera>
+    </a-scene>
+    <script>
+        // Listen for gesture pinch event
+        AFRAME.registerComponent('pinch-to-zoom', {
+            init: function () {
+                var lastScale = 1;
+                var camera = this.el;
+
+                this.el.addEventListener('gesture-pinch', function (event) {
+                    // Adjusting camera scale based on pinch gesture
+                    var scale = camera.getAttribute('scale');
+                    var newScale = lastScale * event.detail.scale;
+                    if (newScale > 0) {
+                        camera.setAttribute('scale', { x: newScale, y: newScale, z: newScale });
+                        lastScale = newScale;
+                    }
                 });
             }
-
-            setInterval(updateDistances, 1000);
         });
     </script>
 </body>
-
-</html>
